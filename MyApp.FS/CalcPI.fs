@@ -54,7 +54,7 @@ let calcPI (param:CalcParam) =
             // run on all random streams
             [| 0..numStreams-1 |]
             |> Array.map (fun streamId ->
-                random.Fill(0, numPoints, points)
+                random.Fill(streamId, numPoints, points)
                 worker.Launch <@ kernelCountInside @> lp pointsX pointsY numPoints numPointsInside.Ptr
                 let numPointsInside = reduce.Reduce(numPointsInside.Ptr, numPoints)
                 4.0 * (float numPointsInside) / (float numPoints) )

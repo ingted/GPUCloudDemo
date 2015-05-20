@@ -1,5 +1,5 @@
 ﻿#load "Common.fsx"
-#r "../MyApp.FS/bin/Release/MyApp.FS.exe"
+#r "../MyApp.CS/bin/Release/MyApp.CS.exe"
 
 open System
 open System.IO
@@ -13,14 +13,14 @@ open MBrace.Flow
 open Alea.CUDA
 open Alea.CUDA.Utilities
 open Alea.CUDA.Unbound
-open MyApp.FS
+open MyApp.CS
 open CloudScripts
 
 let cluster = Runtime.GetHandle(config)
 cluster.ClearAllProcesses()
 
 // a function to create a list of calcPI task parameter. We randomly select the seed and rng.
-let createParams (numPoints:int) (numStreamsPerSM:int) (numRuns:int) : CalcPI.CalcParam[] =
+let createParams (numPoints:int) (numStreamsPerSM:int) (numRuns:int) : CalcPIParam[] =
     let rng = Random()
     Array.init numRuns (fun taskId ->
         let seed = rng.Next() |> uint32
@@ -30,14 +30,19 @@ let createParams (numPoints:int) (numStreamsPerSM:int) (numRuns:int) : CalcPI.Ca
             match rng.Next(2) with
             | 0 -> getRandomXorshift7
             | _ -> getRandomMrg32k3a
-        { TaskId = taskId; NumPoints = numPoints; NumStreamsPerSM = numStreamsPerSM; GetRandom = getRandom } )
+        let param = new CalcPIParam()
+        param.TaskId <- taskId
+        param.NumPoints <- numPoints
+        param.NumStreamsPerSM <- numStreamsPerSM
+        param.GetRandom <- Func<_,_,_> getRandom
+        param )
 
 let oneMillion = 1000000
 let numCloudWorkers = (cluster.GetWorkers(showInactive = false) |> Array.ofSeq).Length
 
 let numPoints = oneMillion * 10
 let numStreamsPerSM = 10
-let numRuns = numCloudWorkers * 20
+let numRuns = numCloudWorkers * 100
 //let numRuns = numCloudWorkers * 2000
 
 // this is the cloud workflow, we have a big question (numRuns task, each task will generate many 
@@ -47,7 +52,7 @@ let numRuns = numCloudWorkers * 20
 let pi = 
     createParams numPoints numStreamsPerSM numRuns
     |> CloudFlow.ofArray
-    |> CloudFlow.map CalcPI.calcPI
+    |> CloudFlow.map CalcPI.Calc
     |> CloudFlow.toArray
     |> cluster.Run
     |> Array.choose id
