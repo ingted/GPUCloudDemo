@@ -24,17 +24,17 @@ let createParams (numPoints:int) (numStreamsPerSM:int) (numRuns:int) : CalcPIPar
     let rng = Random()
     Array.init numRuns (fun taskId ->
         let seed = rng.Next() |> uint32
-//        let getRandomXorshift7 numStreams numDimensions = Rng.XorShift7.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, seed) :> Rng.IRandom<float>
-//        let getRandomMrg32k3a  numStreams numDimensions = Rng.Mrg32k3a.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, seed) :> Rng.IRandom<float>
-//        let getRandom =
-//            match rng.Next(2) with
-//            | 0 -> getRandomXorshift7
-//            | _ -> getRandomMrg32k3a
+        let getRandomXorshift7 numStreams numDimensions = Rng.XorShift7.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, seed) :> Rng.IRandom<float>
+        let getRandomMrg32k3a  numStreams numDimensions = Rng.Mrg32k3a.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, seed) :> Rng.IRandom<float>
+        let getRandom =
+            match rng.Next(2) with
+            | 0 -> getRandomXorshift7
+            | _ -> getRandomMrg32k3a
         let param = new CalcPIParam()
         param.TaskId <- taskId
         param.NumPoints <- numPoints
         param.NumStreamsPerSM <- numStreamsPerSM
-//        param.GetRandom <- Func<_,_,_> getRandom
+        param.GetRandom <- Func<_,_,_> getRandom
         param )
 
 let oneMillion = 1000000
@@ -52,7 +52,7 @@ let numRuns = numCloudWorkers * 100
 let pi = 
     createParams numPoints numStreamsPerSM numRuns
     |> CloudFlow.ofArray
-    |> CloudFlow.map (fun p -> CalcPI.Calc(p))
+    |> CloudFlow.map CalcPI.Calc
     |> CloudFlow.toArray
     |> cluster.Run
     |> Array.choose id

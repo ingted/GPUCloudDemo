@@ -12,12 +12,13 @@ using Microsoft.FSharp.Core;
 
 namespace MyApp.CS
 {
+    [Serializable]
     public class CalcPIParam
     {
         public int TaskId { get; set; }
         public int NumPoints { get; set; }
         public int NumStreamsPerSM { get; set; }
-        //public Func<int, int, Alea.CUDA.Unbound.Rng.IRandom<double>> GetRandom { get; set; } 
+        public Func<int, int, Alea.CUDA.Unbound.Rng.IRandom<double>> GetRandom { get; set; } 
     }
 
     public class CalcPI
@@ -62,9 +63,9 @@ namespace MyApp.CS
                 var numStreams = numStreamsPerSM*numSMs;
                 var numDimensions = 2;
 
-                //var random = param.GetRandom(numStreams, numDimensions);
-                var random = (Alea.CUDA.Unbound.Rng.IRandom<double>)Alea.CUDA.Unbound.Rng.Mrg32k3a.CUDA.DefaultUniformRandomModuleF64.Default.Create(
-                    numStreams, numDimensions, 42u);
+                var random = param.GetRandom(numStreams, numDimensions);
+                //var random = (Alea.CUDA.Unbound.Rng.IRandom<double>)Alea.CUDA.Unbound.Rng.Mrg32k3a.CUDA.DefaultUniformRandomModuleF64.Default.Create(
+                //    numStreams, numDimensions, 42u);
 
                 using (var reduce = DeviceSumModuleI32.Default.Create(numPoints))
                 using (var points = random.AllocCUDAStreamBuffer(numPoints))
@@ -109,7 +110,7 @@ namespace MyApp.CS
                 TaskId = 0,
                 NumPoints = numPoints,
                 NumStreamsPerSM = numStreamsPerSM,
-                //GetRandom = GetRandomXorshift7
+                GetRandom = GetRandomXorshift7
             };
 
             var pi = Calc(param);

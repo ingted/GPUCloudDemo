@@ -37,7 +37,7 @@ let numCloudWorkers = (cluster.GetWorkers(showInactive = false) |> Array.ofSeq).
 
 let numPoints = oneMillion * 10
 let numStreamsPerSM = 10
-let numRuns = numCloudWorkers * 20
+let numRuns = numCloudWorkers * 100
 //let numRuns = numCloudWorkers * 2000
 
 // this is the cloud workflow, we have a big question (numRuns task, each task will generate many 
