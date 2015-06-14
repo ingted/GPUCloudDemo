@@ -4,24 +4,24 @@ This project shows how to use Alea GPU in a [m-brace cloud](http://www.m-brace.n
 
 ## Setup the cloud
 
-Before running this demo, you need setup an m-brace cloud on Azure. Please follow [the getting started guide of m-brace](http://www.m-brace.net/#try). In that guide, you first setup a cloud service bus and cloud storage service through [Brisk Engine](https://www.briskengine.com/), then it is recommended to experiment with [m-brace hands-on tutorial](https://github.com/mbraceproject/MBrace.StarterKit/archive/master.zip).
+Before running this demo, you need to setup an m-brace cloud on Azure. Please follow [the getting started guide of m-brace](http://www.m-brace.net/#try). In that guide, you first setup a cloud service bus and cloud storage service through [Brisk Engine](https://www.briskengine.com/). You should record two service endpoint strings for service bus and storage service. You need fill these two strings in the script of this demo.
 
-During this step, you should record two service endpoint strings for service bus and storage service. You need fill these two strings in the script of this demo.
+Explore the [m-brace hands-on tutorial](https://github.com/mbraceproject/MBrace.StarterKit/archive/master.zip) for additional examples.
 
 ## Setup the demo
 
-Since the m-brace cloud worker running on Azure server doesn't have GPU supported, so you need find one or multiple machines which has nvidia GPU of at least Fermi arch, then setup the mbrace local worker on these machines:
+The m-brace cloud worker running on Azure server does not have GPU support. You therefore need to find one or multiple machines which have an NVIDIA GPU of at least Fermi architecture and setup the mbrace local worker on these machines:
 
-- first double check if your machine have nvidia GPU of at least Fermi arch
-- second, double check if you have a [License of Alea GPU](http://quantalea.com/licensing/) installed on your machine, for more detail of how to install Alea GPU license, you can reference [here](http://quantalea.com/static/app/tutorial/quick_start/licensing_and_deployment.html), [here](http://quantalea.com/static/app/manual/compilation-license_manager.html) and [here](http://quantalea.com/licensing/)
-- before you open the demo solution, please first run `InstallWindows.bat` in the solution folder. This script will do:
-  - restore packages with [Paket](https://github.com/fsprojects/Paket)
-  - copy some native resources for [Alea GPU JIT compilation](http://quantalea.com/static/app/manual/compilation-jit_compilation_in_detail.html) to the local cloud worker folder
-- open the solution, change the configuration to `Release`, since in the script, we reference the release build assembly
-- build the solution
-- open `CloudScripts/Common.fsx` file, fill your connection strings of storage and service bus, and save the file
-- open `CloudScripts/StartLocalWorker.fsx`, select all and execute them in F# interactive, this will popup a cmd window that runs the local mbrace worker
-- you can switch to other GPU enabled machine and start another mbrace local worker
+- Check if your machine has an NVIDIA GPU of at least Fermi architecture
+- Check if you have a [License of Alea GPU](http://quantalea.com/licensing/) installed on your machine. For more detail of how to install Alea GPU license, see [here](http://quantalea.com/static/app/tutorial/quick_start/licensing_and_deployment.html), [here](http://quantalea.com/static/app/manual/compilation-license_manager.html) and [here](http://quantalea.com/licensing/)
+- Before you open the demo solution, please first run `InstallWindows.bat` in the solution folder. This script will do the following:
+  - Restore packages with [Paket](https://github.com/fsprojects/Paket)
+  - Copy some native resources for [Alea GPU JIT compilation](http://quantalea.com/static/app/manual/compilation-jit_compilation_in_detail.html) to the local cloud worker folder
+- Open the solution, change the configuration to `Release`, since in the script, we reference the release build assembly
+- Build the solution
+- Open `CloudScripts/Common.fsx` file, fill your connection strings of storage and service bus, and save the file
+- Open `CloudScripts/StartLocalWorker.fsx`, select all and execute them in F# interactive, this will popup a cmd window that runs the local mbrace worker
+- Switch to other GPU enabled machine and start another mbrace local worker
 
 In the mbrace local worker cmd window, after initialization, it prints `Service xxxxxxx started in xx seconds`. Now you can execute:
 
@@ -55,9 +55,9 @@ This worker `MBraceWorkerRol_IN_0` is on azure server, which doesn't have GPU ca
 
 Hint: before each demo running, it is suggested to reset the F# interactive session.
 
-Note: it would be slow for the first time you run these demo scripts, cause m-brace needs to upload your assemblies (include those references) to the cloud, and all cloud worker will download them.
+Note: it would be slow for the first time you run these demo scripts, cause m-brace needs to upload your assemblies include all the dependencies to the cloud, and all cloud workers have to download them.
 
-The demo in `CloudScripts/SimpleGPU.fsx` shows how to run GPU code (both [JIT compile](http://quantalea.com/static/app/manual/compilation-jit_compilation_in_detail.html) and [AOT compile](http://quantalea.com/static/app/manual/compilation-aot_compilation_in_detail.html)) on one GPU enabled mbrace cloud worker. Note, there is an issue currently, that m-brace cannot send quotations from FSI, so we have to program GPU module in a normal F# or C# project, then reference them in the FSI script. For more details, please read the comments in the code.
+The demo in `CloudScripts/SimpleGPU.fsx` shows how to run GPU code (both [JIT compile](http://quantalea.com/static/app/manual/compilation-jit_compilation_in_detail.html) and [AOT compile](http://quantalea.com/static/app/manual/compilation-aot_compilation_in_detail.html)) on a GPU enabled mbrace cloud worker. Note, there is an issue currently, that m-brace cannot send quotations from FSI, so we have to program GPU module in a normal F# or C# project, then reference them in the FSI script. For more details, please read the comments in the code.
 
 The demo in `CloudScripts/CalcPI.fsx` uses m-brace's `CloudFlow` to run a big PI calculation on the cloud. For more details, please read the comments in the code. Here is an result of one simulation:
 
@@ -86,7 +86,7 @@ Jobs : Active / Faulted / Completed / Total
 
 ## Conclusion
 
-- Azure doesn't have GPU support. One solution is to create a private GPU cloud. m-brace cloud in this demo is composed by two components: `MBrace.Core` which provides the cloud programming model; and `MBrace.Azure` which implements cloud worker with Azure services, such as service bus and storage service. If we create private GPU cloud, we need re-implement `MBrace.Azure`, such as `MBrace.PrivateGPUCloud`, which then we need implement the cloud worker, and service bus and storage service.
+- Azure doesn't have GPU support. One solution is to create a private GPU cloud. The m-brace cloud in this demo is composed by two components: `MBrace.Core` which provides the cloud programming model; and `MBrace.Azure` which implements cloud worker with Azure services, such as service bus and storage service. If we create private GPU cloud, we need re-implement `MBrace.Azure`, such as `MBrace.PrivateGPUCloud`, which then we need implement the cloud worker, and service bus and storage service.
 - When implementing the cloud worker, we need add the JIT native resources to the worker, like what we do in the `InstallWindows.bat`. Alea GPU support Windows/Linux/MacOSX, so it has its own native resource locating system.
 - Since the issue that m-brace cannot send quotations from FSI script, currently, we have to code the GPU module in normal assembly.
 - A GPU module instance represents a compiled and loaded GPU module, which should live as long as possible in cloud worker. To do so, in m-brace, we can use static member, for more details, please reference [here](https://github.com/mbraceproject/MBrace.StarterKit/issues/15)
