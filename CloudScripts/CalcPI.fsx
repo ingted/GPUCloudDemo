@@ -1,17 +1,8 @@
 ﻿#load "Common.fsx"
 #r "../MyApp.FS/bin/Release/MyApp.FS.exe"
 
-open System
-open System.IO
-open System.Threading
-open MBrace
-open MBrace.Azure
 open MBrace.Azure.Client
-open MBrace.Azure.Runtime
-open MBrace.Workflows
 open MBrace.Flow
-open Alea.CUDA
-open Alea.CUDA.Utilities
 open Alea.CUDA.Unbound
 open MyApp.FS.CalcPI
 open CloudScripts
