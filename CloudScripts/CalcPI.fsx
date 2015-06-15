@@ -60,5 +60,5 @@ let numPointsPerStreamLog = 19
 let numStreamsPerTaskLog = 6
 let seed = 33u
 
-simulatePI rngXorShift7 seed numPointsLog numPointsPerStreamLog numStreamsPerTaskLog
+simulatePI rngMrg32k3a seed numPointsLog numPointsPerStreamLog numStreamsPerTaskLog
 
