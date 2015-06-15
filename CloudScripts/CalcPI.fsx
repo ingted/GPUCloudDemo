@@ -55,9 +55,7 @@ let simulatePI rng seed numPointsLog numPointsPerStreamLog numStreamsPerTaskLog 
 let rngXorShift7 seed numStreams numDimensions = Rng.XorShift7.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, seed) :> Rng.IRandom<float>
 let rngMrg32k3a  seed numStreams numDimensions = Rng.Mrg32k3a.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, seed) :> Rng.IRandom<float>
 
-// +2 because there are some workers that is cpu, so try to overlap a little, but this might not be good,
-// ideally, we should have all workers gpu enabled
-let numPointsLog = 32 + 2 
+let numPointsLog = 32
 // 23 results around 8 million points, that is roughly a good choice
 let numPointsPerStreamLog = 23
 // 5 results 32 streams per task, running this configure results tasks=64, which is good if your gpu
