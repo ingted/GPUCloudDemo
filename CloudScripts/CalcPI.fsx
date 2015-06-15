@@ -13,44 +13,47 @@ open MBrace.Flow
 open Alea.CUDA
 open Alea.CUDA.Utilities
 open Alea.CUDA.Unbound
-open MyApp.FS
+open MyApp.FS.CalcPI
 open CloudScripts
 
 let cluster = Runtime.GetHandle(config)
 cluster.ClearAllProcesses()
 
-// A function to create a list of calcPI task parameters. We randomly select the seed and rng.
-let createParams (numPoints:int) (numStreamsPerSM:int) (numRuns:int) : CalcPI.CalcParam[] =
-    let rng = Random()
-    Array.init numRuns (fun taskId ->
-        let seed = rng.Next() |> uint32
-        let getRandomXorshift7 numStreams numDimensions = Rng.XorShift7.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, seed) :> Rng.IRandom<float>
-        let getRandomMrg32k3a  numStreams numDimensions = Rng.Mrg32k3a.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, seed) :> Rng.IRandom<float>
-        let getRandom =
-            match rng.Next(2) with
-            | 0 -> getRandomXorshift7
-            | _ -> getRandomMrg32k3a
-        { TaskId = taskId; NumPoints = numPoints; NumStreamsPerSM = numStreamsPerSM; GetRandom = getRandom } )
+//let numCloudWorkers = (cluster.GetWorkers(showInactive = false) |> Array.ofSeq).Length
 
-let oneMillion = 1000000
-let numCloudWorkers = (cluster.GetWorkers(showInactive = false) |> Array.ofSeq).Length
+let simulatePI rng seed numPointsLog numPointsPerStreamLog =
+    let numStreamsLog = numPointsLog - numPointsPerStreamLog
+    let numPoints = 1 <<< numPointsLog
+    let numPointsPerStream = 1 <<< numPointsPerStreamLog
+    let numStreams = 1 <<< numStreamsLog
 
-let numSamples = numCloudWorkers*10*oneMillion
-let numTasks = numCloudWorkers*10
-let numStreamsPerSM = 10
-let numRuns = numCloudWorkers * 100
+    printfn "numPoints              : 1 <<< %d = %d" numPointsLog numPoints
+    printfn "numPointsPerStream     : 1 <<< %d = %d" numPointsPerStreamLog numPointsPerStream
+    printfn "numStreams             : 1 <<< %d = %d" numStreamsLog numStreams
 
-// This is the cloud workflow, we have a big calculation (numRuns task, each task will generate many 
-// random streams, and approximate PI with these random numbers). CloudFlow.map will map these tasks
-// to available cloud workers. Because not all cloud workers have a GPU, we return float option.
-// We choose those results which return some number and take the mean.
-let pi = 
-    createParams numSamples numStreamsPerSM numRuns
-    |> CloudFlow.ofArray
-    |> CloudFlow.map CalcPI.calcPI
-    |> CloudFlow.toArray
-    |> cluster.Run
-    |> Array.choose id
-    |> Array.average
+    let pi =
+        [| 0..numStreams - 1 |]
+        |> Array.map (fun streamId -> 
+            { Seed = seed
+              NumStreams = numStreams
+              NumPoints = numPointsPerStream
+              StreamId = streamId
+              GetRandom = rng } )
+        |> CloudFlow.ofArray
+        |> CloudFlow.map calcPI
+        |> CloudFlow.toArray
+        |> cluster.Run
+        |> Array.choose id
+        |> Array.average
 
-printfn "PI = %A" pi
+    printfn "PI                     : %f" pi
+
+let rngXorShift7 seed numStreams numDimensions = Rng.XorShift7.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, seed) :> Rng.IRandom<float>
+let rngMrg32k3a  seed numStreams numDimensions = Rng.Mrg32k3a.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, seed) :> Rng.IRandom<float>
+
+let numPointsLog = 28
+let numPointsPerStreamLog = 20
+let seed = 42u
+
+simulatePI rngXorShift7 seed numPointsLog numPointsPerStreamLog
+

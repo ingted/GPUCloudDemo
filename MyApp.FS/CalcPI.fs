@@ -24,23 +24,25 @@ let canDoGPUCalc =
 
 // parameters of one calc task
 type CalcParam =
-    { TaskId : int
+    { Seed : uint32
+      NumStreams : int
       NumPoints : int
-      NumStreamsPerSM : int
-      GetRandom : int -> int -> Rng.IRandom<float> }
+      StreamId : int
+      GetRandom : uint32 -> int -> int -> Rng.IRandom<float> }
 
 let calcPI (param:CalcParam) =
     if canDoGPUCalc.Value then
         let worker = Worker.Default
         // switch to the gpu worker thread to execute GPU kernels
         worker.Eval <| fun _ ->
-            let numPoints = param.NumPoints
-            let numStreamsPerSM = param.NumStreamsPerSM
-            let numSMs = worker.Device.Attributes.MULTIPROCESSOR_COUNT
-            let numStreams = numStreamsPerSM * numSMs
+            let seed = param.Seed
+            let numStreams = param.NumStreams
             let numDimensions = 2
+            let numPoints = param.NumPoints
+            let numSMs = worker.Device.Attributes.MULTIPROCESSOR_COUNT
+            let streamId = param.StreamId
 
-            let random = param.GetRandom numStreams numDimensions
+            let random = param.GetRandom seed numStreams numDimensions
             use reduce = DeviceSumModuleI32.Default.Create(numPoints)
             use points = random.AllocCUDAStreamBuffer(numPoints)
             use numPointsInside = worker.Malloc<int>(numPoints)
@@ -48,29 +50,26 @@ let calcPI (param:CalcParam) =
             let pointsY = points.Ptr + numPoints
             let lp = LaunchParam(numSMs * 8, 256)
 
-            printfn "Task #.%d : Random(%s) Streams(%d) Points(%d)" param.TaskId (random.GetType().Namespace) numStreams numPoints
+            printfn "Random(%s) Streams(%d/%d) Points(%d)" (random.GetType().Namespace) (streamId+1) numStreams numPoints
 
-            // iterate through all random streams
-            [| 0..numStreams-1 |]
-            |> Array.map (fun streamId ->
-                random.Fill(streamId, numPoints, points)
-                worker.Launch <@ kernelCountInside @> lp pointsX pointsY numPoints numPointsInside.Ptr
-                let numPointsInside = reduce.Reduce(numPointsInside.Ptr, numPoints)
-                4.0 * (float numPointsInside) / (float numPoints) )
-            |> Array.average
+            random.Fill(streamId, numPoints, points)
+            worker.Launch <@ kernelCountInside @> lp pointsX pointsY numPoints numPointsInside.Ptr
+            let numPointsInside = reduce.Reduce(numPointsInside.Ptr, numPoints)
+            4.0 * (float numPointsInside) / (float numPoints)
             |> Some
 
     // if no gpu return none
     else None 
 
 let test() =
-    let numPoints = 1000000
-    let numStreamsPerSM = 2
-    let getRandomXorshift7 numStreams numDimensions = Rng.XorShift7.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, 42u) :> Rng.IRandom<float>
-    let getRandomMrg32k3a  numStreams numDimensions = Rng.Mrg32k3a.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, 42u) :> Rng.IRandom<float>
-
-    { TaskId = 0; NumPoints = numPoints; NumStreamsPerSM = numStreamsPerSM; GetRandom = getRandomXorshift7 }
-    |> calcPI |> printfn "pi=%A"
-
-    { TaskId = 0; NumPoints = numPoints; NumStreamsPerSM = numStreamsPerSM; GetRandom = getRandomMrg32k3a }
-    |> calcPI |> printfn "pi=%A"
+    ()
+//    let numPoints = 1000000
+//    let numStreamsPerSM = 2
+//    let getRandomXorshift7 numStreams numDimensions = Rng.XorShift7.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, 42u) :> Rng.IRandom<float>
+//    let getRandomMrg32k3a  numStreams numDimensions = Rng.Mrg32k3a.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, 42u) :> Rng.IRandom<float>
+//
+//    { TaskId = 0; NumPoints = numPoints; NumStreamsPerSM = numStreamsPerSM; GetRandom = getRandomXorshift7 }
+//    |> calcPI |> printfn "pi=%A"
+//
+//    { TaskId = 0; NumPoints = numPoints; NumStreamsPerSM = numStreamsPerSM; GetRandom = getRandomMrg32k3a }
+//    |> calcPI |> printfn "pi=%A"

@@ -32,8 +32,8 @@ module Common =
     open Alea.CUDA.Unbound
 
     // place your connection strings here
-    let myStorageConnectionString = "yourstring"
-    let myServiceBusConnectionString = "yourstring"
+    let myStorageConnectionString = "DefaultEndpointsProtocol=https;AccountName=weelasta696ad2824ae6414e;AccountKey=tbnG229Y8iPrq11IkZ4Ez5uZf4a6albo0JeMMepq0q6PjNxuunLzhMX2JxMkr8gK2plu95UU7OPoZJlTJT1DOw=="
+    let myServiceBusConnectionString = "Endpoint=sb://brisk-we4089696ad282.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=lV6WGAZj+IXuDugg6as+WlOlqjKmPGaaTOTGkoRwdIY=" 
 
     let config =
         { Configuration.Default with
@@ -55,6 +55,12 @@ module Common =
                 Device.Default |> ignore; 
                 return Some Device.Default.Attributes.MULTIPROCESSOR_COUNT
             with _ -> return None }
+
+    let gpuWorkers (cluster:Runtime) =
+        cloud {
+            let! results = Cloud.ParallelEverywhere isGPUEnabled
+            return results |> Array.choose id }
+        |> cluster.Run
 
     // return one gpu enabled cloud worker
     let gpuWorker (cluster:Runtime) =

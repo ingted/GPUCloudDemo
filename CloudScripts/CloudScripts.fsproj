@@ -51,6 +51,7 @@
     <None Include="App.config" />
     <None Include="Common.fsx" />
     <None Include="StartLocalWorker.fsx" />
+    <None Include="Monitor.fsx" />
     <None Include="SimpleGPU.fsx" />
     <None Include="CalcPI.fsx" />
     <None Include="CalcPI_CS.fsx" />
