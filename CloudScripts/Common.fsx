@@ -47,6 +47,15 @@ module Common =
             try Device.Default |> ignore; return Some w
             with _ -> return None }
 
+    // a cloud method to get the number of multi processors of the gpu worker
+    let numGPUMultiProcessors =
+        cloud {
+            let! w = Cloud.CurrentWorker
+            try 
+                Device.Default |> ignore; 
+                return Some Device.Default.Attributes.MULTIPROCESSOR_COUNT
+            with _ -> return None }
+
     // return one gpu enabled cloud worker
     let gpuWorker (cluster:Runtime) =
         let gpuWorkers =

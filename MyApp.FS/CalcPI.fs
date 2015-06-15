@@ -30,10 +30,9 @@ type CalcParam =
       GetRandom : int -> int -> Rng.IRandom<float> }
 
 let calcPI (param:CalcParam) =
-    // if no gpu, we reutrn none
     if canDoGPUCalc.Value then
         let worker = Worker.Default
-        // we switch to the gpu worker thread to do the job
+        // switch to the gpu worker thread to execute GPU kernels
         worker.Eval <| fun _ ->
             let numPoints = param.NumPoints
             let numStreamsPerSM = param.NumStreamsPerSM
@@ -51,7 +50,7 @@ let calcPI (param:CalcParam) =
 
             printfn "Task #.%d : Random(%s) Streams(%d) Points(%d)" param.TaskId (random.GetType().Namespace) numStreams numPoints
 
-            // run on all random streams
+            // iterate through all random streams
             [| 0..numStreams-1 |]
             |> Array.map (fun streamId ->
                 random.Fill(streamId, numPoints, points)
@@ -61,7 +60,8 @@ let calcPI (param:CalcParam) =
             |> Array.average
             |> Some
 
-    else None
+    // if no gpu return none
+    else None 
 
 let test() =
     let numPoints = 1000000
