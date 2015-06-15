@@ -51,7 +51,7 @@ let simulatePI rng seed numPointsLog numPointsPerStreamLog =
 let rngXorShift7 seed numStreams numDimensions = Rng.XorShift7.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, seed) :> Rng.IRandom<float>
 let rngMrg32k3a  seed numStreams numDimensions = Rng.Mrg32k3a.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, seed) :> Rng.IRandom<float>
 
-let numPointsLog = 28
+let numPointsLog = 32
 let numPointsPerStreamLog = 20
 let seed = 42u
 
