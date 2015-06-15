@@ -27,7 +27,8 @@ type CalcParam =
     { Seed : uint32
       NumStreams : int
       NumPoints : int
-      StreamId : int
+      StartStreamId : int
+      StopStreamId : int
       GetRandom : uint32 -> int -> int -> Rng.IRandom<float> }
 
 let calcPI (param:CalcParam) =
@@ -40,7 +41,8 @@ let calcPI (param:CalcParam) =
             let numDimensions = 2
             let numPoints = param.NumPoints
             let numSMs = worker.Device.Attributes.MULTIPROCESSOR_COUNT
-            let streamId = param.StreamId
+            let startStreamId = param.StartStreamId
+            let stopStreamId = param.StopStreamId
 
             let random = param.GetRandom seed numStreams numDimensions
             use reduce = DeviceSumModuleI32.Default.Create(numPoints)
@@ -49,14 +51,19 @@ let calcPI (param:CalcParam) =
             let pointsX = points.Ptr
             let pointsY = points.Ptr + numPoints
             let lp = LaunchParam(numSMs * 8, 256)
+            
+            let pi =
+                [| startStreamId .. stopStreamId |]
+                |> Array.map (fun streamId ->
+                    random.Fill(streamId, numPoints, points)
+                    worker.Launch <@ kernelCountInside @> lp pointsX pointsY numPoints numPointsInside.Ptr
+                    let numPointsInside = reduce.Reduce(numPointsInside.Ptr, numPoints)
+                    4.0 * (float numPointsInside) / (float numPoints))
+                |> Array.average
 
-            printfn "Random(%s) Streams(%d/%d) Points(%d)" (random.GetType().Namespace) (streamId+1) numStreams numPoints
+            printfn "Random(%s) Streams(%d-%d/%d) Points(%d) : %f" (random.GetType().Namespace) (startStreamId+1) (stopStreamId+1) numStreams numPoints pi
 
-            random.Fill(streamId, numPoints, points)
-            worker.Launch <@ kernelCountInside @> lp pointsX pointsY numPoints numPointsInside.Ptr
-            let numPointsInside = reduce.Reduce(numPointsInside.Ptr, numPoints)
-            4.0 * (float numPointsInside) / (float numPoints)
-            |> Some
+            Some pi
 
     // if no gpu return none
     else None 
