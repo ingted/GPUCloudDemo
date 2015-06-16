@@ -4,7 +4,7 @@ open System
 open Alea.CUDA
 open Alea.CUDA.Unbound
 
-// a gpu kernel, use [method-based way](http://quantalea.com/static/app/manual/compilation-method_based_gpu_coding.html)
+// GPU kernel to check if point is inside circle 
 [<ReflectedDefinition;AOTCompile(AOTOnly = true)>]
 let kernelCountInside (pointsX:deviceptr<float>) (pointsY:deviceptr<float>) (numPoints:int) (numPointsInside:deviceptr<int>) =
     let start = blockIdx.x * blockDim.x + threadIdx.x
@@ -16,13 +16,13 @@ let kernelCountInside (pointsX:deviceptr<float>) (pointsY:deviceptr<float>) (num
         numPointsInside.[i] <- if sqrt (x*x + y*y) <= 1.0 then 1 else 0
         i <- i + stride
 
-// in this demo, we use default gpu worker, so we check if it is available
+// we use default gpu worker, so we check if it is available
 let canDoGPUCalc =
     Lazy.Create <| fun _ ->
         try Device.Default |> ignore; true
         with _ -> false
 
-// parameters of one calc task
+// calculation task parameters 
 type CalcParam =
     { Seed : uint32
       NumStreams : int
@@ -65,18 +65,5 @@ let calcPI (param:CalcParam) =
 
             Some pi
 
-    // if no gpu return none
+    // if no gpu return None
     else None 
-
-let test() =
-    ()
-//    let numPoints = 1000000
-//    let numStreamsPerSM = 2
-//    let getRandomXorshift7 numStreams numDimensions = Rng.XorShift7.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, 42u) :> Rng.IRandom<float>
-//    let getRandomMrg32k3a  numStreams numDimensions = Rng.Mrg32k3a.CUDA.DefaultUniformRandomModuleF64.Default.Create(numStreams, numDimensions, 42u) :> Rng.IRandom<float>
-//
-//    { TaskId = 0; NumPoints = numPoints; NumStreamsPerSM = numStreamsPerSM; GetRandom = getRandomXorshift7 }
-//    |> calcPI |> printfn "pi=%A"
-//
-//    { TaskId = 0; NumPoints = numPoints; NumStreamsPerSM = numStreamsPerSM; GetRandom = getRandomMrg32k3a }
-//    |> calcPI |> printfn "pi=%A"

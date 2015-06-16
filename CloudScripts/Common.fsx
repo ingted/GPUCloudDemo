@@ -24,8 +24,8 @@ module Common =
     open Alea.CUDA
 
     // place your connection strings here
-    let myStorageConnectionString = "yourstring"
-    let myServiceBusConnectionString = "yourstring"
+    let myStorageConnectionString = "DefaultEndpointsProtocol=https;AccountName=weelasta696ad2824ae6414e;AccountKey=tbnG229Y8iPrq11IkZ4Ez5uZf4a6albo0JeMMepq0q6PjNxuunLzhMX2JxMkr8gK2plu95UU7OPoZJlTJT1DOw=="
+    let myServiceBusConnectionString = "Endpoint=sb://brisk-we4089696ad282.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=lV6WGAZj+IXuDugg6as+WlOlqjKmPGaaTOTGkoRwdIY="
 
     let config =
         { Configuration.Default with
