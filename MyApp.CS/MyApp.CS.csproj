@@ -32,7 +32,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>MyApp.CS.CalcPI</StartupObject>
+    <StartupObject>MyApp.CS.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml">
