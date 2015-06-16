@@ -1,20 +1,13 @@
-﻿#load "Common.fsx"
+﻿#load "Config.fsx"
 
-open System
-open System.IO
 open System.Threading
-open MBrace
-open MBrace.Azure
 open MBrace.Azure.Client
-open MBrace.Azure.Runtime
-open Alea.CUDA
-open Alea.CUDA.Utilities
-open Alea.CUDA.Unbound
-open CloudScripts
 
-let cluster = Runtime.GetHandle(config)
+//run this from cmd window to monitor the status:
+//"C:\Program Files (x86)\Microsoft SDKs\F#\3.1\Framework\v4.0\Fsi.exe" Monitor.fsx
 
-// run this from cmd window to monitor the status
+let cluster = Runtime.GetHandle(Config.config)
+
 while true do
     cluster.ShowWorkers()
     cluster.ShowProcesses()

@@ -49,12 +49,12 @@
   <ItemGroup>
     <Compile Include="Program.fs" />
     <None Include="App.config" />
-    <None Include="Common.fsx" />
-    <None Include="StartLocalWorker.fsx" />
+    <None Include="Config.fsx" />
     <None Include="Monitor.fsx" />
-    <None Include="SimpleGPU.fsx" />
-    <None Include="CalcPI.fsx" />
+    <None Include="LocalWorker.fsx" />
+    <None Include="CalcPI_FS.fsx" />
     <None Include="CalcPI_CS.fsx" />
+    <None Include="SimpleGPU_FS.fsx" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

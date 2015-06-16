@@ -5,7 +5,7 @@ open Alea.CUDA
 open Alea.CUDA.Unbound
 
 // GPU kernel to check if point is inside circle 
-[<ReflectedDefinition;AOTCompile(AOTOnly = true)>]
+[<ReflectedDefinition;AOTCompile>]
 let kernelCountInside (pointsX:deviceptr<float>) (pointsY:deviceptr<float>) (numPoints:int) (numPointsInside:deviceptr<int>) =
     let start = blockIdx.x * blockDim.x + threadIdx.x
     let stride = gridDim.x * blockDim.x

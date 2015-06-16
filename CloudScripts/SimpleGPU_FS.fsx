@@ -1,4 +1,8 @@
-﻿#load "Common.fsx"
+﻿#load "Config.fsx"
+#r "../packages/Alea.IL/lib/net40/Alea.IL.dll"
+#r "../packages/Alea.CUDA/lib/net40/Alea.CUDA.dll"
+#r "../packages/Alea.CUDA.IL/lib/net40/Alea.CUDA.IL.dll"
+#r "../packages/Alea.CUDA.Unbound/lib/net40/Alea.CUDA.Unbound.dll"
 #r "../MyApp.FS/bin/Release/MyApp.FS.exe"
 
 open System
@@ -14,7 +18,53 @@ open Alea.CUDA.Unbound
 open MyApp.FS
 open CloudScripts
 
-let cluster = Runtime.GetHandle(config)
+[<AutoOpen>]
+module Helper =
+
+    // a cloud method to check if there is default gpu worker
+    let isGPUEnabled =
+        cloud {
+            let! w = Cloud.CurrentWorker
+            try Device.Default |> ignore; return Some w
+            with _ -> return None }
+
+    // a cloud method to get the number of multi processors of the gpu worker
+    let numGPUMultiProcessors =
+        cloud {
+            let! w = Cloud.CurrentWorker
+            try 
+                Device.Default |> ignore; 
+                return Some Device.Default.Attributes.MULTIPROCESSOR_COUNT
+            with _ -> return None }
+
+    let gpuWorkers (cluster:Runtime) =
+        cloud {
+            let! results = Cloud.ParallelEverywhere isGPUEnabled
+            return results |> Array.choose id }
+        |> cluster.Run
+
+    // return one gpu enabled cloud worker
+    let gpuWorker (cluster:Runtime) =
+        let gpuWorkers =
+            cloud { 
+                let! results = Cloud.ParallelEverywhere isGPUEnabled
+                return results |> Array.choose id }
+            |> cluster.Run
+        if gpuWorkers.Length = 0 then failwith "No GPU enabled worker found!"
+        else
+            printfn "Found these gpu enabled workers (total %d workers):" gpuWorkers.Length
+            for gpuWorker in gpuWorkers do
+                printfn "--> %s" ((gpuWorker :?> WorkerRef).Hostname)
+            let gpuWorker = gpuWorkers.[0]
+            printfn "We choose worker %A." ((gpuWorker :?> WorkerRef).Hostname)
+            gpuWorker
+
+    // run a cloud computation on a specified gpu enabled worker.
+    let gpuRun (cluster:Runtime) gpuWorker (computation:Cloud<'T>) : 'T =
+        let workflow = cloud { return! Cloud.StartAsCloudTask(computation, target = gpuWorker) }
+        cluster.Run(workflow).Result
+
+let cluster = Runtime.GetHandle(Config.config)
 let gpuWorker = gpuWorker cluster
 
 // you can run these cloud computation to get remote gpu and alea gpu information
